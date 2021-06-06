@@ -4,6 +4,7 @@ import json
 import sys
 import os.path
 
+import checkFeeds
 
 def makeIndex(channels, skip_existing = True, show_avatars = True, show_captions = True):
 
@@ -15,10 +16,10 @@ def makeIndex(channels, skip_existing = True, show_avatars = True, show_captions
         <meta charset="utf-8">
         <title>utewb</title>
 <style>
-ul {
+ul.channels {
     list-style-type: none;
 }
-li {
+ul.channels li {
     display: inline-block;
 }
 .avatar {
@@ -29,7 +30,22 @@ li {
 </style>
     </head>
     <body>
-        <ul>
+        <section>
+            <h3>Recent Uploads</h3>
+            <ul class="recent">
+"""
+
+    recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False)
+
+    for v in recentUploads:
+        output += '<li><a href="https://www.youtube.com/watch?v=%s">%s</a></li>' % (v['url'], v['title'])
+
+    output += r"""
+            </ul>
+        </section>
+        <section>
+            <h3>Channels</h3>
+            <ul class="channels">
 """
 
     for c in channels:
@@ -43,7 +59,8 @@ li {
 
     output += r"""
 
-        </ul>
+            </ul>
+        </section>
     </body>
 </html>"""
 

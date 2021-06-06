@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 import json
 import re
 import sys
+import datetime
 
 def updateFeeds(channels, verbose=False):
 
@@ -26,7 +27,10 @@ def updateFeeds(channels, verbose=False):
             sys.stdout.write('got feed for channel %s)\n' % c_id)
 
 
-def listRecentVideos(channels, update_feeds = True):
+# TODO: use from_days_ago
+def listRecentVideos(channels, update_feeds = True, from_days_ago = 5):
+
+    recentUploads = []
 
     if update_feeds:
         print('updating feeds...')
@@ -47,7 +51,7 @@ def listRecentVideos(channels, update_feeds = True):
                         gd = re.search(r'"yt:video:(?P<url>.*)"', _id).groupdict()
                         e['url'] = gd['url']
                     elif c1.tag.endswith('title'):
-                        e['title'] = json.dumps(c1.text)
+                        e['title'] = json.dumps(c1.text)[1:-1] # remove quotation marks
                     elif c1.tag.endswith('published'):
                         published = json.dumps(c1.text)
                         gd = re.search(r'(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)', published).groupdict()
@@ -58,7 +62,9 @@ def listRecentVideos(channels, update_feeds = True):
         gd = re.search(r'(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)', e['published']).groupdict()
         (year, month, day) = (int(gd['year'],10), int(gd['month'],10), int(gd['day'],10))
         if year == 2021 and month == 6 and day == 6:
-            print(e['title'])
+            recentUploads.append(e)
+
+    return recentUploads
 
 
 if __name__ == "__main__":
@@ -66,4 +72,4 @@ if __name__ == "__main__":
         sys.stderr.write('usage: %s [FILE]\n' % sys.argv[0])
         exit(1)
     channels = json.loads(open(sys.argv[1]).read())['channels']
-    listRecentVideos(channels, update_feeds=True)
+    listRecentVideos(channels, update_feeds=False)
