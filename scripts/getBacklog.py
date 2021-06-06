@@ -15,7 +15,7 @@ def fetchBacklog(channels, skip_existing = True):
         sys.stdout.write('channel: %s (%s)' % (c['id'], c['title']))
         sys.stdout.flush()
 
-        os.makedirs(c['id'], exist_ok=True)
+        os.makedirs('../channels/%s' % c['id'], exist_ok=True)
 
         if os.path.isfile(dest_file):
             if skip_existing:
