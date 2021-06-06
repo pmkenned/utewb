@@ -70,41 +70,39 @@ ul {
                 ps = dict()
                 wget_ps = dict()
 
-                # fire off youtube-dls
-                for v in videos[0:8]:
-                    if get_thumbnails:
-                        print('getting thumbnail url for %s' % v['url'])
-                        ps[v['url']] = subprocess.Popen(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                # TODO: check for errors when retrieving thumbnails
+                if get_thumbnails:
 
-                # fire off wgets
-                for v in videos[0:8]:
-                    if get_thumbnails:
-                        print('downloading thumbnail for %s' % v['url'])
+                    # fire off youtube-dls
+                    for v in videos:
+                        dest_jpg = '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url'])
+                        sys.stdout.write('getting thumbnail url for %s' % v['url'])
+                        if os.path.isfile(dest_jpg):
+                            print(' skipping')
+                            continue
+                        ps[v['url']] = subprocess.Popen(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        sys.stdout.write('\n')
+
+                    # fire off wgets
+                    for v in videos:
+                        sys.stdout.write('downloading thumbnail for %s' % v['url'])
+                        dest_jpg = '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url'])
+                        if os.path.isfile(dest_jpg):
+                            print(' skipping')
+                            continue
                         out, err = ps[v['url']].communicate()
                         thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', out.decode().split('\n')[3])[-1])
                         wget_ps[v['url']] = subprocess.Popen(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url']), thumbnail_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        sys.stdout.write('\n')
 
-                # wait for wgets to finish
-                for v in videos[0:8]:
-                    if get_thumbnails:
+                    # wait for wgets to finish
+                    for v in videos:
+                        if os.path.isfile(dest_jpg):
+                            continue
                         out, err = wget_ps[v['url']].communicate()
                         print('thumbnail for %s done' % v['url'])
 
-                for v in videos[0:8]:
-
-                    if get_thumbnails and False:
-
-                        process = subprocess.Popen(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        out, err = process.communicate()
-                        thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', out.split("\n")[3])[-1])
-
-                        #thumbnail_options = subprocess.run(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']], capture_output=True, text=True).stdout.split("\n")
-                        #thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', thumbnail_options[3])[-1])
-
-                        process = subprocess.Popen(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url']), thumbnail_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        out, err = process.communicate()
-                        #subprocess.run(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url']), thumbnail_url], capture_output=True, text=True)
-
+                for v in videos:
 
                     if get_thumbnails:
                         output += '<li><figure><a href="https://www.youtube.com/watch?v=%s"><img class="thumbnail" src="thumbnails/%s.jpg"></a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['url'], v['title'])
