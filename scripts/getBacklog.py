@@ -6,8 +6,57 @@ import sys
 import os
 import re
 
+def getAvatar(channel_id, output_file = 'avatar.jpg'):
+    channel_url = 'https://www.youtube.com/channel/%s' % channel_id 
+    channel_home = subprocess.run(['wget', '-q', '-O', '-', channel_url], capture_output=True, text=True).stdout
+    avatar_url = re.search(r'"avatar":\{"thumbnails":\[\{"url":"(?P<img_url>[^"]+)"', channel_home).groupdict().get('img_url')
+    # TODO: produce an error
+    if avatar_url is None:
+        pass
+    else:
+        subprocess.run(['wget', '-q', '-O', output_file, avatar_url])
 
-def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, make_index = True, replace_json = True, max_videos = None):
+def getAvatars(channels, output_file = 'avatar.jpg', batch_size = 10):
+
+    ps0 = dict()
+
+    # TODO: use batch_size
+
+    # fire off wgets, first round
+    for c in channels:
+        dest_jpg = '../channels/%s/%s' % (c['id'], output_file)
+        sys.stdout.write('getting avatar url for %s' % c['id'])
+        if os.path.isfile(dest_jpg):
+            print(' skipping %s' % dest_jpg)
+            continue
+        channel_url = 'https://www.youtube.com/channel/%s' % c['id']
+        ps0[c['id']] = subprocess.Popen(['wget', '-q', '-O', '-', channel_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sys.stdout.write('\n')
+
+    ps1= dict()
+
+    # fire off wgets, second round
+    for c_id, p in ps0.items():
+        sys.stdout.write('downloading avatar for %s' % c_id)
+        out, err = p.communicate()
+        channel_home = out.decode()
+        avatar_url = re.search(r'"avatar":\{"thumbnails":\[\{"url":"(?P<img_url>[^"]+)"', channel_home).groupdict().get('img_url')
+        if avatar_url is None:
+            sys.stderr.write(' ERR: could not find avatar URL\n')
+            continue
+        dest_jpg = '../channels/%s/%s' % (c_id, output_file)
+        ps1[c_id] = subprocess.Popen(['wget', '-q', '-O', dest_jpg, avatar_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sys.stdout.write('\n')
+
+    # wait for wgets to finish
+    for c_id, p in ps1.items():
+        out, err = p.communicate()
+        print('avatar for %s done' % c_id)
+
+
+def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, make_index = True, replace_json = True, max_vids_per_channel = None):
+
+    getAvatars(channels)
 
     for c in channels:
 
@@ -49,7 +98,6 @@ def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, make_in
             <meta charset="utf-8">
             <title>""" + c['title'] + """</title>
             <style>
-
 ul {
     list-style-type: none;
 }
@@ -62,14 +110,15 @@ ul {
             </style>
         </head>
         <body>
+        <h1>""" + c['title'] + """</h1>
         <ul>
     """
 
                 all_videos = json.loads(json_text)['entries']
-                if max_videos is None:
+                if max_vids_per_channel is None:
                     videos = all_videos
                 else:
-                    videos = all_videos[0:max_videos]
+                    videos = all_videos[0:max_vids_per_channel]
 
                 ps = dict()
                 wget_ps = dict()
@@ -128,7 +177,7 @@ def main():
         sys.stderr.write('usage: %s [FILE]\n' % sys.argv[0])
         exit(1)
     channels = json.loads(open(sys.argv[1]).read())['channels']
-    fetchBacklog(channels, skip_existing = False, get_thumbnails = False, make_index = True, replace_json = False, max_videos = None)
+    fetchBacklog(channels, skip_existing=False, get_thumbnails=False, make_index=True, replace_json=False, max_vids_per_channel=None)
 
 if __name__ == "__main__":
     main()
