@@ -30,7 +30,7 @@ def listRecentVideos(channels, update_feeds = True):
 
     if update_feeds:
         print('updating feeds...')
-        updateFeeds()
+        updateFeeds(channels)
         print('done')
 
     entries = []
@@ -66,4 +66,4 @@ if __name__ == "__main__":
         sys.stderr.write('usage: %s [FILE]\n' % sys.argv[0])
         exit(1)
     channels = json.loads(open(sys.argv[1]).read())['channels']
-    listRecentVideos(channels, update_feeds=False)
+    listRecentVideos(channels, update_feeds=True)
