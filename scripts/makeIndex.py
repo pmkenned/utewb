@@ -12,7 +12,8 @@ def makeIndex(channels, skip_existing = True):
     output += r"""<!DOCTYPE html>
 <html>
     <head>
-        <title>TODO</title>
+        <meta charset="utf-8">
+        <title>utewb</title>
     </head>
     <body>
 """
