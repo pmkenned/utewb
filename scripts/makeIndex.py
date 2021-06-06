@@ -18,7 +18,7 @@ def makeIndex(channels, skip_existing = True):
 """
 
     for c in channels:
-        output += '<li><a href="%s/index.html">%s</a></li>\n' % (c['id'], c['title'])
+        output += '<li><a href="channels/%s/index.html">%s</a></li>\n' % (c['id'], c['title'])
 
     output += r"""
         <ul>
