@@ -27,7 +27,7 @@ def getAvatars(channels, output_file = 'avatar.jpg', batch_size = 10):
         dest_jpg = '../channels/%s/%s' % (c['id'], output_file)
         sys.stdout.write('getting avatar url for %s' % c['id'])
         if os.path.isfile(dest_jpg):
-            print(' skipping %s' % dest_jpg)
+            print(' skipping')
             continue
         channel_url = 'https://www.youtube.com/channel/%s' % c['id']
         ps0[c['id']] = subprocess.Popen(['wget', '-q', '-O', '-', channel_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -54,7 +54,7 @@ def getAvatars(channels, output_file = 'avatar.jpg', batch_size = 10):
         print('avatar for %s done' % c_id)
 
 
-def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, make_index = True, replace_json = True, max_vids_per_channel = None):
+def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, show_thumbnails = True, make_index = True, replace_json = True, max_vids_per_channel = None):
 
     getAvatars(channels)
 
@@ -159,8 +159,11 @@ ul {
 
                 for v in videos:
 
-                    if get_thumbnails:
-                        output += '<li><figure><a href="https://www.youtube.com/watch?v=%s"><img class="thumbnail" src="thumbnails/%s.jpg"></a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['url'], v['title'])
+                    if show_thumbnails:
+                        if os.path.isfile('../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url'])):
+                            output += '<li><figure><a href="https://www.youtube.com/watch?v=%s"><img class="thumbnail" src="thumbnails/%s.jpg"></a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['url'], v['title'])
+                        else:
+                            output += '<li><figure><a href="https://www.youtube.com/watch?v=%s">[no thumbnail]</a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['title'])
                     else:
                         output += '<li><a href="https://www.youtube.com/watch?v=%s">%s</a></li>\n' % (v['url'], v['title'])
 
