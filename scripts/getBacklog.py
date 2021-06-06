@@ -7,7 +7,7 @@ import os
 import re
 
 
-def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, make_index = True, replace_json = True):
+def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, make_index = True, replace_json = True, max_videos = None):
 
     for c in channels:
 
@@ -65,7 +65,11 @@ ul {
         <ul>
     """
 
-                videos = json.loads(json_text)['entries']
+                all_videos = json.loads(json_text)['entries']
+                if max_videos is None:
+                    videos = all_videos
+                else:
+                    videos = all_videos[0:max_videos]
 
                 ps = dict()
                 wget_ps = dict()
@@ -91,7 +95,9 @@ ul {
                             print(' skipping')
                             continue
                         out, err = ps[v['url']].communicate()
-                        thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', out.decode().split('\n')[3])[-1])
+                        lines = out.decode().split('\n')
+                        first_thumbnail = next(line for line in lines if re.match(r'^\d+\s+\d+\s+\d+\s+.*', line))
+                        thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', first_thumbnail)[-1])
                         wget_ps[v['url']] = subprocess.Popen(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url']), thumbnail_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                         sys.stdout.write('\n')
 
@@ -122,7 +128,7 @@ def main():
         sys.stderr.write('usage: %s [FILE]\n' % sys.argv[0])
         exit(1)
     channels = json.loads(open(sys.argv[1]).read())['channels']
-    fetchBacklog(channels[0:1], skip_existing = False, get_thumbnails = True, make_index = True, replace_json = False)
+    fetchBacklog(channels, skip_existing = False, get_thumbnails = False, make_index = True, replace_json = False, max_videos = None)
 
 if __name__ == "__main__":
     main()
