@@ -7,13 +7,15 @@ import os.path
 import checkFeeds
 import getBacklog
 
-def makeIndex(channels, skip_existing = True, show_avatars = True, show_captions = True, show_thumbnails = True):
+def makeIndex(channels, show_avatars = True, show_captions = True, show_thumbnails = True):
 
     getBacklog.getAvatars(channels)
 
-    getBacklog.fetchBacklog(channels, replace_json = False)
+    getBacklog.fetchBacklog(channels, skip_existing = False, replace_json = False, get_thumbnails = True)
 
     recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False)
+
+    getBacklog.getThumbnails(recentUploads)
 
     output = ""
 
@@ -56,6 +58,7 @@ ul.channels li {
             if os.path.isfile('../channels/%s/thumbnails/%s.jpg' % (v['channel'], v['url'])):
                 output += '<li><figure><a href="https://www.youtube.com/watch?v=%s"><img class="thumbnail" src="channels/%s/thumbnails/%s.jpg"></a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['channel'], v['url'], v['title'])
             else:
+                print("no thumbnail found for channel %s video %s" % (v['channel'], v['url']))
                 output += '<li><figure><a href="https://www.youtube.com/watch?v=%s">[no thumbnail]</a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['title'])
         else:
             output += '<li><a href="https://www.youtube.com/watch?v=%s">%s</a></li>\n' % (v['url'], v['title'])

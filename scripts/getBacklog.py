@@ -53,7 +53,46 @@ def getAvatars(channels, output_file = 'avatar.jpg', batch_size = 10):
         out, err = p.communicate()
         print('avatar for %s done' % c_id)
 
-# TODO: get thumbnails in a function
+def getThumbnails(videos, replace_existing = False):
+
+    ps0 = dict()
+    ps1 = dict()
+
+    # fire off youtube-dls
+    for v in videos:
+        dest_jpg = '../channels/%s/thumbnails/%s.jpg' % (v['channel'], v['url'])
+        sys.stdout.write('getting thumbnail url for %s' % v['url'])
+        if os.path.isfile(dest_jpg) and not replace_existing:
+            print(' skipping')
+            continue
+        os.makedirs('../channels/%s' % v['channel'], exist_ok=True)
+        os.makedirs('../channels/%s/thumbnails' % v['channel'], exist_ok=True)
+
+        print("CMD: " + ' '.join(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']]))
+
+        ps0[v['channel'] + ':' + v['url']] = subprocess.Popen(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sys.stdout.write('\n')
+
+    # fire off wgets
+    for v_channel_url, p in ps0.items():
+        v_channel = v_channel_url.split(':')[0]
+        v_url = v_channel_url.split(':')[1]
+        sys.stdout.write('downloading thumbnail for %s' % v_url)
+        out, err = ps0[v_channel_url].communicate()
+        lines = out.decode().split('\n')
+        print("THUMBNAILS:")
+        print(lines)
+        print("END OF THUMBNAILS")
+        first_thumbnail = next(line for line in lines if re.match(r'^\d+\s+\d+\s+\d+\s+.*', line))
+        thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', first_thumbnail)[-1])
+        ps1[v_url] = subprocess.Popen(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (v_channel, v_url), thumbnail_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sys.stdout.write('\n')
+
+    # wait for wgets to finish
+    for v_url, p in ps1.items():
+        out, err = ps1[v_url].communicate()
+        print('thumbnail for %s done' % v_url)
+
 
 def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, show_thumbnails = True, make_index = True, replace_json = True, max_vids_per_channel = None):
 
@@ -66,8 +105,6 @@ def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, show_th
         sys.stdout.flush()
 
         os.makedirs('../channels/%s' % c['id'], exist_ok=True)
-        if get_thumbnails:
-            os.makedirs('../channels/%s/thumbnails' % c['id'], exist_ok=True)
 
         if json_exists and skip_existing:
             sys.stdout.write(' skipping\n')
@@ -114,47 +151,16 @@ ul {
     """
 
                 all_videos = json.loads(json_text)['entries']
+                for v in all_videos:
+                    v['channel'] = c['id']
+
                 if max_vids_per_channel is None:
                     videos = all_videos
                 else:
                     videos = all_videos[0:max_vids_per_channel]
 
-                ps = dict()
-                wget_ps = dict()
-
-                # TODO: check for errors when retrieving thumbnails
                 if get_thumbnails:
-
-                    # fire off youtube-dls
-                    for v in videos:
-                        dest_jpg = '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url'])
-                        sys.stdout.write('getting thumbnail url for %s' % v['url'])
-                        if os.path.isfile(dest_jpg):
-                            print(' skipping')
-                            continue
-                        ps[v['url']] = subprocess.Popen(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        sys.stdout.write('\n')
-
-                    # fire off wgets
-                    for v in videos:
-                        sys.stdout.write('downloading thumbnail for %s' % v['url'])
-                        dest_jpg = '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url'])
-                        if os.path.isfile(dest_jpg):
-                            print(' skipping')
-                            continue
-                        out, err = ps[v['url']].communicate()
-                        lines = out.decode().split('\n')
-                        first_thumbnail = next(line for line in lines if re.match(r'^\d+\s+\d+\s+\d+\s+.*', line))
-                        thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', first_thumbnail)[-1])
-                        wget_ps[v['url']] = subprocess.Popen(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (c['id'], v['url']), thumbnail_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        sys.stdout.write('\n')
-
-                    # wait for wgets to finish
-                    for v in videos:
-                        if os.path.isfile(dest_jpg):
-                            continue
-                        out, err = wget_ps[v['url']].communicate()
-                        print('thumbnail for %s done' % v['url'])
+                    getThumbnails(videos)
 
                 for v in videos:
 
