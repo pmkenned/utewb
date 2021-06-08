@@ -11,7 +11,7 @@ def makeIndex(channels, show_avatars = True, show_captions = True, show_thumbnai
 
     getBacklog.getAvatars(channels)
 
-    getBacklog.fetchBacklog(channels, skip_existing = False, replace_json = False, get_thumbnails = True)
+    getBacklog.fetchBacklog(channels, skip_existing = False, replace_json = False, get_thumbnails = False)
 
     recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False)
 

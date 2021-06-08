@@ -67,9 +67,6 @@ def getThumbnails(videos, replace_existing = False):
             continue
         os.makedirs('../channels/%s' % v['channel'], exist_ok=True)
         os.makedirs('../channels/%s/thumbnails' % v['channel'], exist_ok=True)
-
-        print("CMD: " + ' '.join(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']]))
-
         ps0[v['channel'] + ':' + v['url']] = subprocess.Popen(['youtube-dl', '--list-thumbnails', 'https://www.youtube.com/watch?v=%s' % v['url']], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         sys.stdout.write('\n')
 
@@ -80,13 +77,13 @@ def getThumbnails(videos, replace_existing = False):
         sys.stdout.write('downloading thumbnail for %s' % v_url)
         out, err = ps0[v_channel_url].communicate()
         lines = out.decode().split('\n')
-        print("THUMBNAILS:")
-        print(lines)
-        print("END OF THUMBNAILS")
-        first_thumbnail = next(line for line in lines if re.match(r'^\d+\s+\d+\s+\d+\s+.*', line))
-        thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', first_thumbnail)[-1])
-        ps1[v_url] = subprocess.Popen(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (v_channel, v_url), thumbnail_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        sys.stdout.write('\n')
+        try:
+            first_thumbnail = next(line for line in lines if re.match(r'^\d+\s+\d+\s+\d+\s+.*', line))
+            thumbnail_url = re.sub(r'\?.*', '', re.split(r'\s+', first_thumbnail)[-1])
+            ps1[v_url] = subprocess.Popen(['wget', '-q', '-O', '../channels/%s/thumbnails/%s.jpg' % (v_channel, v_url), thumbnail_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            sys.stdout.write('\n')
+        except:
+            print('thumbnail for %s failed to load' % v_url)
 
     # wait for wgets to finish
     for v_url, p in ps1.items():
