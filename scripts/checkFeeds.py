@@ -6,6 +6,8 @@ import re
 import sys
 import datetime
 
+# TODO: update backlogs with feed data
+
 def updateFeeds(channels, verbose=False):
 
     ps = dict()
@@ -27,7 +29,6 @@ def updateFeeds(channels, verbose=False):
             sys.stdout.write('got feed for channel %s)\n' % c_id)
 
 
-# TODO: use from_days_ago
 def listRecentVideos(channels, update_feeds = True, from_days_ago = 5):
 
     recentUploads = []
@@ -45,6 +46,7 @@ def listRecentVideos(channels, update_feeds = True, from_days_ago = 5):
         for c0 in root:
             if c0.tag.endswith('entry'):
                 e = dict()
+                e['channel'] = c['id']
                 for c1 in c0:
                     if c1.tag.endswith('id'):
                         _id = json.dumps(c1.text)
@@ -60,8 +62,9 @@ def listRecentVideos(channels, update_feeds = True, from_days_ago = 5):
 
     for e in entries:
         gd = re.search(r'(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)', e['published']).groupdict()
-        (year, month, day) = (int(gd['year'],10), int(gd['month'],10), int(gd['day'],10))
-        if year == 2021 and month == 6 and day == 6:
+        vid_date = datetime.date(int(gd['year'],10), int(gd['month'],10), int(gd['day'],10))
+        n_days_ago = (datetime.datetime.now() - datetime.timedelta(days=from_days_ago)).date()
+        if vid_date > n_days_ago:
             recentUploads.append(e)
 
     return recentUploads

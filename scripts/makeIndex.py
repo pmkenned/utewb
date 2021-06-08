@@ -6,7 +6,7 @@ import os.path
 
 import checkFeeds
 
-def makeIndex(channels, skip_existing = True, show_avatars = True, show_captions = True):
+def makeIndex(channels, skip_existing = True, show_avatars = True, show_captions = True, show_thumbnails = True):
 
     output = ""
 
@@ -16,7 +16,7 @@ def makeIndex(channels, skip_existing = True, show_avatars = True, show_captions
         <meta charset="utf-8">
         <title>utewb</title>
 <style>
-ul.channels {
+ul {
     list-style-type: none;
 }
 ul.channels li {
@@ -26,6 +26,12 @@ ul.channels li {
     object-fit: cover;
     object-position: center;
     width: 48px;
+}
+.thumbnail {
+    object-fit: cover;
+    object-position: center;
+    height: 130px;
+    width: 240px;
 }
 </style>
     </head>
@@ -37,8 +43,18 @@ ul.channels li {
 
     recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False)
 
+    # TODO: sort by upload date
+    # TODO: show channel name, etc and thumbnail
+    # TODO: break into groups based on upload date
     for v in recentUploads:
-        output += '<li><a href="https://www.youtube.com/watch?v=%s">%s</a></li>' % (v['url'], v['title'])
+
+        if show_thumbnails:
+            if os.path.isfile('../channels/%s/thumbnails/%s.jpg' % (v['channel'], v['url'])):
+                output += '<li><figure><a href="https://www.youtube.com/watch?v=%s"><img class="thumbnail" src="channels/%s/thumbnails/%s.jpg"></a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['channel'], v['url'], v['title'])
+            else:
+                output += '<li><figure><a href="https://www.youtube.com/watch?v=%s">[no thumbnail]</a><figcaption>%s</figcaption></figure></li>\n' % (v['url'], v['title'])
+        else:
+            output += '<li><a href="https://www.youtube.com/watch?v=%s">%s</a></li>\n' % (v['url'], v['title'])
 
     output += r"""
             </ul>
