@@ -13,12 +13,13 @@ def makeIndex(channels, show_avatars = True, show_captions = True, show_thumbnai
 
     getBacklog.fetchBacklog(channels, skip_existing = False, replace_json = False, get_thumbnails = False)
 
-    recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False)
+    recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False, from_days_ago=3)
 
     getBacklog.getThumbnails(recentUploads)
 
     output = ""
 
+    # TODO: use css grid or something to improve the layout of video thumbnails
     output += r"""<!DOCTYPE html>
 <html>
     <head>
@@ -28,8 +29,12 @@ def makeIndex(channels, show_avatars = True, show_captions = True, show_thumbnai
 ul {
     list-style-type: none;
 }
-ul.channels li {
+ul.recent li, ul.channels li {
     display: inline-block;
+}
+ul.recent li {
+    width: 280px;
+    border: 1px solid red;
 }
 .avatar {
     object-fit: cover;
@@ -52,6 +57,7 @@ ul.channels li {
     # TODO: sort by upload date
     # TODO: show channel name, etc and thumbnail
     # TODO: break into groups based on upload date
+    recentUploads = sorted(recentUploads, key = lambda s: s['published'], reverse=True)
     for v in recentUploads:
 
         if show_thumbnails:

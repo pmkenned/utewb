@@ -16,7 +16,7 @@ def fetchFeeds(channels, verbose=False, update_feeds = True):
         if verbose:
             sys.stdout.write('getting feed for channel %s (%s)...' % (c['id'], c['title']))
             sys.stdout.flush()
-        if os.path.isfile('../channels/%s/feed.xml'):
+        if os.path.isfile('../channels/%s/feed.xml' % c['id']):
             if verbose:
                 sys.stdout.write(' skipping\n')
             continue
@@ -26,8 +26,6 @@ def fetchFeeds(channels, verbose=False, update_feeds = True):
         rss = 'https://www.youtube.com/feeds/videos.xml?channel_id=%s' % c['id']
         ps[c['id']] = subprocess.Popen(['wget', '-q', '-O', '-', rss], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-
-    entries = []
     for c_id, p in ps.items():
         out, err = p.communicate()
         out = out.decode()
@@ -43,7 +41,7 @@ def listRecentVideos(channels, update_feeds = True, from_days_ago = 5):
     recentUploads = []
 
     print('getting feeds...')
-    fetchFeeds(channels, update_feeds)
+    fetchFeeds(channels, update_feeds=update_feeds)
     print('done getting feeds')
 
     entries = []
