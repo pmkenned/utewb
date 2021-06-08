@@ -4,17 +4,25 @@ import xml.etree.ElementTree as ET
 import json
 import re
 import sys
+import os
 import datetime
 
 # TODO: update backlogs with feed data
-
-def updateFeeds(channels, verbose=False):
+def fetchFeeds(channels, verbose=False, update_feeds = True):
 
     ps = dict()
 
     for c in channels:
         if verbose:
-            sys.stdout.write('getting feed for channel %s (%s)\n' % (c['id'], c['title']))
+            sys.stdout.write('getting feed for channel %s (%s)...' % (c['id'], c['title']))
+            sys.stdout.flush()
+        if os.path.isfile('../channels/%s/feed.xml'):
+            if verbose:
+                sys.stdout.write(' skipping\n')
+            continue
+        else:
+            if verbose:
+                sys.stdout.write('\n')
         rss = 'https://www.youtube.com/feeds/videos.xml?channel_id=%s' % c['id']
         ps[c['id']] = subprocess.Popen(['wget', '-q', '-O', '-', rss], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -23,6 +31,7 @@ def updateFeeds(channels, verbose=False):
     for c_id, p in ps.items():
         out, err = p.communicate()
         out = out.decode()
+        os.makedirs('../channels/%s' % c_id, exist_ok=True)
         with open('../channels/%s/feed.xml' % c_id, 'w') as fh:
             fh.write(out)
         if verbose:
@@ -33,10 +42,9 @@ def listRecentVideos(channels, update_feeds = True, from_days_ago = 5):
 
     recentUploads = []
 
-    if update_feeds:
-        print('updating feeds...')
-        updateFeeds(channels)
-        print('done')
+    print('getting feeds...')
+    fetchFeeds(channels, update_feeds)
+    print('done getting feeds')
 
     entries = []
     for c in channels:

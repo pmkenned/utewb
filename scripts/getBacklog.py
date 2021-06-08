@@ -53,14 +53,14 @@ def getAvatars(channels, output_file = 'avatar.jpg', batch_size = 10):
         out, err = p.communicate()
         print('avatar for %s done' % c_id)
 
+# TODO: get thumbnails in a function
 
 def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, show_thumbnails = True, make_index = True, replace_json = True, max_vids_per_channel = None):
-
-    getAvatars(channels)
 
     for c in channels:
 
         dest_file = '../channels/%s/videos.json' % c['id']
+        json_exists = os.path.isfile(dest_file)
 
         sys.stdout.write('channel: %s (%s)' % (c['id'], c['title']))
         sys.stdout.flush()
@@ -69,20 +69,19 @@ def fetchBacklog(channels, skip_existing = True, get_thumbnails = False, show_th
         if get_thumbnails:
             os.makedirs('../channels/%s/thumbnails' % c['id'], exist_ok=True)
 
-        if os.path.isfile(dest_file):
-            if skip_existing:
-                sys.stdout.write(' skipping\n')
-                continue
+        if json_exists and skip_existing:
+            sys.stdout.write(' skipping\n')
+            continue
 
         playlist = 'UU' + c['id'][2:]
 
-        if replace_json:
+        if replace_json or not json_exists:
             result = subprocess.run(['youtube-dl', 'https://www.youtube.com/playlist?list=%s' % playlist, '--flat-playlist', '--dump-single-json'], capture_output=True, text=True)
 
-            json_txt = result.stdout.replace('},', '},\n')
+            json_text = result.stdout.replace('},', '},\n')
 
             with open(dest_file, 'w') as fh:
-                fh.write(json_txt)
+                fh.write(json_text)
         else:
             with open(dest_file, 'r') as fh:
                 json_text = fh.read()
@@ -168,9 +167,9 @@ ul {
                         output += '<li><a href="https://www.youtube.com/watch?v=%s">%s</a></li>\n' % (v['url'], v['title'])
 
                 output += r"""
-            </ul>
-        </body>
-    </html>"""
+        </ul>
+    </body>
+</html>"""
                 fh.write(output)
 
 
@@ -180,7 +179,7 @@ def main():
         sys.stderr.write('usage: %s [FILE]\n' % sys.argv[0])
         exit(1)
     channels = json.loads(open(sys.argv[1]).read())['channels']
-    fetchBacklog(channels, skip_existing=False, get_thumbnails=False, make_index=True, replace_json=False, max_vids_per_channel=None)
+    fetchBacklog(channels, skip_existing=False, get_thumbnails=False, make_index=True, replace_json = False, max_vids_per_channel=None)
 
 if __name__ == "__main__":
     main()

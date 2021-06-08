@@ -5,8 +5,15 @@ import sys
 import os.path
 
 import checkFeeds
+import getBacklog
 
 def makeIndex(channels, skip_existing = True, show_avatars = True, show_captions = True, show_thumbnails = True):
+
+    getBacklog.getAvatars(channels)
+
+    getBacklog.fetchBacklog(channels, replace_json = False)
+
+    recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False)
 
     output = ""
 
@@ -40,9 +47,6 @@ ul.channels li {
             <h3>Recent Uploads</h3>
             <ul class="recent">
 """
-
-    recentUploads = checkFeeds.listRecentVideos(channels, update_feeds=False)
-
     # TODO: sort by upload date
     # TODO: show channel name, etc and thumbnail
     # TODO: break into groups based on upload date
